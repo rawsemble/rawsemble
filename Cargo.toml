@@ -1,0 +1,11 @@
+[package]
+name = "rawsemble"
+version = "0.1.0"
+authors = ["Joel Denning <joeldenning@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+strum_macros = "0.20.1"
