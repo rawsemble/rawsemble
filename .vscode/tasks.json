@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "args": ["build", "-v"],
+      "command": "cargo",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        {
+          "owner": "rust",
+          "fileLocation": ["relative", "${workspaceRoot}"],
+          "pattern": {
+            "regexp": "^(.*):(\\d+):(\\d+):\\s+(\\d+):(\\d+)\\s+(warning|error):\\s+(.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "endLine": 4,
+            "endColumn": 5,
+            "severity": 6,
+            "message": 7
+          }
+        }
+      ]
+    },
+  ]
+}

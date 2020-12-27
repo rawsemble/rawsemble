@@ -18,7 +18,7 @@ enum ImportToken {
   From,
   Specifier,
   NamedImport,
-  CloseCurly,
+  NextNamedImport,
   StatementEnd,
 }
 
@@ -178,7 +178,7 @@ impl JavascriptLexer {
               pending_import.token_start = Some(self.current_index);
             },
             _ => {
-              panic!(format!("Invalid character '{}' at index {} - expected identifier start", self.current_index, self.current_char));
+              panic!(format!("Invalid character '{}' at index {} - expected identifier start", self.current_char, self.current_index));
             }
           }
         } else {
@@ -196,8 +196,11 @@ impl JavascriptLexer {
                 '}' => {
                   next_token = ImportToken::From;
                 },
+                ',' => {
+                  next_token = ImportToken::NamedImport;
+                },
                 _ => {
-                  next_token = ImportToken::CloseCurly;
+                  next_token = ImportToken::NextNamedImport;
                 }
               }
               pending_import.expected_token = next_token;
@@ -207,16 +210,19 @@ impl JavascriptLexer {
         }
         self.keep_using_handler();
       },
-      ImportToken::CloseCurly => {
+      ImportToken::NextNamedImport => {
         match self.current_char {
           '}' => {
             pending_import.expected_token = ImportToken::From;
+          },
+          ',' => {
+            pending_import.expected_token = ImportToken::NamedImport;
           },
           c if c.is_whitespace() => {
             self.keep_using_handler();
           },
           _ => {
-            panic!(format!("Invalid character '{}' at index {} - expected closing curly brace", self.current_index, self.current_char));
+            panic!(format!("Invalid character '{}' at index {} - expected ',' or '}}'", self.current_char, self.current_index));
           }
         }
         self.keep_using_handler();
@@ -231,12 +237,12 @@ impl JavascriptLexer {
                 pending_import.expected_token = ImportToken::Specifier;
               },
               _ => {
-                panic!(format!("Invalid character '{}' at index {} - expected keyword 'from'", self.current_index, self.current_char));
+                panic!(format!("Invalid character '{}' at index {} - expected keyword 'from'", self.current_char, self.current_index));
               }
             }
           },
           _ => {
-            panic!(format!("Invalid character '{}' at index {} - expected keyword 'from'", self.current_index, self.current_char));
+            panic!(format!("Invalid character '{}' at index {} - expected keyword 'from'", self.current_char, self.current_index));
           }
         }
         self.keep_using_handler();
@@ -253,7 +259,7 @@ impl JavascriptLexer {
               pending_import.import.specifier_start = self.current_index + 1;
             },
             _ => {
-              panic!(format!("Invalid character '{}' at index {} - expected string start ' or \"", self.current_index, self.current_char));
+              panic!(format!("Invalid character '{}' at index {} - expected string start ' or \"", self.current_char, self.current_index));
             }
           }
         } else {
@@ -276,7 +282,7 @@ impl JavascriptLexer {
             self.queue_handler(Handler::Normal);
           },
           _ => {
-            panic!(format!("Invalid character '{}' at index {} - expected statement end", self.current_index, self.current_char));
+            panic!(format!("Invalid character '{}' at index {} - expected statement end", self.current_char, self.current_index));
           }
         }
       },
