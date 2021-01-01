@@ -80,7 +80,7 @@ impl JavascriptLexer {
     }
   }
 
-  pub fn tokenize(&mut self) -> JavascriptModule {
+  pub fn parse_module(&mut self) -> JavascriptModule {
     let mut js_module = JavascriptModule {
       imports: Vec::new(),
       exports: Vec::new(),
