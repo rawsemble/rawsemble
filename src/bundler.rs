@@ -31,8 +31,14 @@ fn traverse_module(file_path: &String, content: &mut String, module_map: Rc<Hash
 
   let mut parent_path_buf = RelativePathBuf::from(file_path.as_str());
   parent_path_buf.pop();
+
   for import in module.imports.iter() {
     let mod_path = parent_path_buf.join_normalized(RelativePath::new(&import.specifier));
+    traverse_module(&mod_path.to_string(), content, Rc::clone(&module_map));
+  }
+
+  for export in module.exports.iter() {
+    let mod_path = parent_path_buf.join_normalized(RelativePath::new(&export.specifier));
     traverse_module(&mod_path.to_string(), content, Rc::clone(&module_map));
   }
 
