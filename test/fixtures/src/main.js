@@ -1,4 +1,4 @@
-import { a, b, DModule, other } from './a.js';
+import A, { a, b, DModule, e } from './a.js';
 import c from './c-default.js';
 
-console.log('hi there', a, other, b, c, DModule);
+console.log('hi there', A, a, b, c, DModule, e);

@@ -1,3 +1,3 @@
-const d = 're-export';
+const d = 're-export default';
 
 export default d;

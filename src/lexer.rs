@@ -254,16 +254,19 @@ impl JavascriptLexer {
             pending_import.import.default_import = Some(default_import);
             let next_token;
             match self.current_char {
-              // ',' => {
-              //   next_token = ImportToken::NamedImport;
-              // },
+              ',' => {
+                // import A, { ... } from
+                // TODO: None?
+                pending_import.token_start = None;
+                next_token = ImportToken::Variables;
+              },
               _ => {
                 // whitespace
                 next_token = ImportToken::From;
+                pending_import.token_start = None;
               }
             }
             pending_import.expected_token = next_token;
-            pending_import.token_start = None;
           }
         }
         self.keep_using_handler();
@@ -281,7 +284,10 @@ impl JavascriptLexer {
           }
         } else {
           match self.current_char {
-            '\u{0030}'..='\u{E01EF}' => {}, // still parsing the NamedImport
+            '\u{0030}'..='\u{E01EF}' => {
+              dbg!(self.current_char);
+               // still parsing the NamedImport
+            },
             _ => {
               let identifier = String::from(self.source.get(pending_import.token_start.unwrap()..self.current_index).unwrap());
               let named_import = NamedImport {
@@ -317,9 +323,7 @@ impl JavascriptLexer {
           ',' => {
             pending_import.expected_token = ImportToken::NamedImport;
           },
-          c if c.is_whitespace() => {
-            self.keep_using_handler();
-          },
+          c if c.is_whitespace() => {},
           _ => {
             panic!(format!("Invalid character '{}' at index {} - expected ',' or '}}'", self.current_char, self.current_index));
           }
@@ -396,8 +400,10 @@ impl JavascriptLexer {
           '{' => {
             pending_export.expected_token = ExportToken::NamedExport;
           },
-          _ => {
-          }
+          '*' => {
+            pending_export.expected_token = ExportToken::From;
+          },
+          _ => {}
         }
 
         self.keep_using_handler();
@@ -418,8 +424,9 @@ impl JavascriptLexer {
             '\u{0030}'..='\u{E01EF}' => {},
             _ => {
               let identifier = String::from(self.source.get(pending_export.token_start.unwrap()..self.current_index).unwrap());
-              if identifier == "default" { // TODO: this can be improved.  "default as" w/ backtracking?
-                  // reset since next identifier will rename "export { default as ... }"
+              if identifier == "default" {
+                  // TODO: this can be improved.  "default as" w/ backtracking?
+                  // reset since next identifier will alias default "export { default as ... }"
                   pending_export.token_start = None;
                   pending_export.expected_token = ExportToken::NextNamedExport;
               } else {
@@ -465,7 +472,7 @@ impl JavascriptLexer {
             self.keep_using_handler();
           },
           _ => {
-            panic!(format!("Invalid character '{}' at index {} - expected ',' or '}}'", self.current_char, self.current_index));
+            panic!(format!("Invalid character '{}' at index {} - expected ',' or keyword 'as' or '}}'", self.current_char, self.current_index));
           }
         }
         self.keep_using_handler();
@@ -492,7 +499,7 @@ impl JavascriptLexer {
             return;
           }
           _ => {
-            panic!(format!("Invalid character '{}' at index {} - expected keyword 'from'", self.current_char, self.current_index));
+            panic!(format!("Invalid character '{}' at index {} - expected keyword 'from' or statement end ';'", self.current_char, self.current_index));
           }
         }
         self.keep_using_handler();
