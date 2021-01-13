@@ -285,7 +285,6 @@ impl JavascriptLexer {
         } else {
           match self.current_char {
             '\u{0030}'..='\u{E01EF}' => {
-              dbg!(self.current_char);
                // still parsing the NamedImport
             },
             _ => {
