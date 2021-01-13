@@ -22,7 +22,6 @@ fn traverse_file(file_path: String, mut module_map: HashMap<String, lexer::Javas
     let module: lexer::JavascriptModule = lexer::JavascriptLexer::new(source).parse_module();
 
     for import in module.imports.iter() {
-        let _parent_path = RelativePath::new(file_path.as_str());
         let mut parent_path_buf = RelativePathBuf::from(file_path.as_str());
         // remove filename + extension
         parent_path_buf.pop();
