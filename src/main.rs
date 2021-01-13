@@ -2,7 +2,6 @@ use std::fs;
 pub mod lexer;
 pub mod bundler;
 use std::collections::HashMap;
-// use std::path::{Path};
 use relative_path::{RelativePath, RelativePathBuf};
 use std::env::current_dir;
 
