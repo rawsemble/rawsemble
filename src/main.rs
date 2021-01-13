@@ -29,7 +29,6 @@ fn traverse_file(file_path: String, mut module_map: HashMap<String, lexer::Javas
     }
 
     for export in module.exports.iter() {
-        let _parent_path = RelativePath::new(file_path.as_str());
         let mut parent_path_buf = RelativePathBuf::from(file_path.as_str());
         parent_path_buf.pop();
         let mod_path = parent_path_buf.join_normalized(RelativePath::new(&export.specifier));
