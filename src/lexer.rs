@@ -467,9 +467,6 @@ impl JavascriptLexer {
             self.indices_to_skip = 1;
             pending_export.expected_token = ExportToken::NamedExport;
           },
-          c if c.is_whitespace() => {
-            self.keep_using_handler();
-          },
           _ => {
             panic!(format!("Invalid character '{}' at index {} - expected ',' or keyword 'as' or '}}'", self.current_char, self.current_index));
           }
