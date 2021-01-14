@@ -17,10 +17,10 @@ export { A };
 `));
 insertModule("test/fixtures/src/a.js",createModuleUrl(`export const a = 'a value';
 
-export { b } from './b.js';
-export * from './e.js';
-export { default as DModule } from './d.js';
-export { A as default } from './a-default.js';
+export { b } from '${resolveImportSpecifier("test/fixtures/src/b.js")}';
+export * from '${resolveImportSpecifier("test/fixtures/src/e.js")}';
+export { default as DModule } from '${resolveImportSpecifier("test/fixtures/src/d.js")}';
+export { A as default } from '${resolveImportSpecifier("test/fixtures/src/a-default.js")}';
 `));
 insertModule("test/fixtures/src/c-default.js",createModuleUrl(`const c = 'default export';
 

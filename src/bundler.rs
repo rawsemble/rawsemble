@@ -56,6 +56,15 @@ fn traverse_module(file_path: &String, content: &mut String, module_map: Rc<Hash
     last_index = import.specifier_end + 1;
   }
 
+  for export in module.exports.iter() {
+    let mod_path = parent_path_buf.join_normalized(RelativePath::new(&export.specifier));
+    content.push_str(module.raw_source.get(last_index..export.specifier_start).unwrap());
+    content.push_str("${resolveImportSpecifier(\"");
+    content.push_str(&mod_path.to_string().as_str());
+    content.push_str("\")}");
+    last_index = export.specifier_end + 1;
+  }
+
   if last_index < module.raw_source.len() {
     content.push_str(module.raw_source.get(last_index..module.raw_source.len()).unwrap());
   }
