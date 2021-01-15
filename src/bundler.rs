@@ -31,8 +31,14 @@ fn traverse_module(file_path: &String, content: &mut String, module_map: Rc<Hash
 
   let mut parent_path_buf = RelativePathBuf::from(file_path.as_str());
   parent_path_buf.pop();
+
   for import in module.imports.iter() {
     let mod_path = parent_path_buf.join_normalized(RelativePath::new(&import.specifier));
+    traverse_module(&mod_path.to_string(), content, Rc::clone(&module_map));
+  }
+
+  for export in module.exports.iter() {
+    let mod_path = parent_path_buf.join_normalized(RelativePath::new(&export.specifier));
     traverse_module(&mod_path.to_string(), content, Rc::clone(&module_map));
   }
 
@@ -48,6 +54,15 @@ fn traverse_module(file_path: &String, content: &mut String, module_map: Rc<Hash
     content.push_str(&mod_path.to_string().as_str());
     content.push_str("\")}");
     last_index = import.specifier_end + 1;
+  }
+
+  for export in module.exports.iter() {
+    let mod_path = parent_path_buf.join_normalized(RelativePath::new(&export.specifier));
+    content.push_str(module.raw_source.get(last_index..export.specifier_start).unwrap());
+    content.push_str("${resolveImportSpecifier(\"");
+    content.push_str(&mod_path.to_string().as_str());
+    content.push_str("\")}");
+    last_index = export.specifier_end + 1;
   }
 
   if last_index < module.raw_source.len() {
