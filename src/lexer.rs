@@ -639,6 +639,10 @@ export { b as default } from './b.js';
         assert_eq!(module.imports.len(), 2);
         assert_eq!(module.imports[0].specifier, "./a.js");
         assert_eq!(module.imports[0].named_imports.len(), 1);
+        assert_eq!(module.imports[0].named_imports, vec![NamedImport {
+            variable_name: String::from("AImport"),
+            binding_name: String::from("AImport")
+        }]);
         assert_eq!(module.imports[0].default_import, None);
         assert_eq!(module.imports[1].specifier, "./c.js");
         assert_eq!(module.imports[1].named_imports.len(), 0);
