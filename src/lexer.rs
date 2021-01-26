@@ -8,7 +8,7 @@ pub struct JavascriptModule {
   pub raw_source: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum ImportToken {
   Variables, // represents a block of possible NamedImports or DefaultImports
   From,
@@ -46,7 +46,7 @@ struct PendingJavascriptExport {
   str_char: Option<char>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct JavascriptImport {
   pub default_name: Option<String>,
   pub default_import: Option<DefaultImport>,
@@ -56,13 +56,13 @@ pub struct JavascriptImport {
   pub specifier_end: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct DefaultImport {
   variable_name: String,
   binding_name: String
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct NamedImport {
   variable_name: String,
   binding_name: String
@@ -489,7 +489,8 @@ impl JavascriptLexer {
           },
           ';' => {
             // export { b };
-            // This ended up not being an export with a specifier
+            // This ended up not being an export with a specifier, so do not record as
+            // pending_export
             self.pending_export = None;
             self.queue_handler(Handler::Normal);
             return;
@@ -540,4 +541,118 @@ impl JavascriptLexer {
       },
     }
   }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_single_import() {
+        let source = String::from("
+import A from './a.js';
+");
+        let module = JavascriptLexer::new(source.clone()).parse_module();
+        assert_eq!(module.imports.len(), 1);
+        assert_eq!(module.exports.len(), 0);
+        assert_eq!(module.raw_source, source);
+    }
+    #[test]
+    fn parses_multiple_imports() {
+        let source = String::from("
+import A from './a.js';
+import c from './c.js';
+");
+        let module = JavascriptLexer::new(source.clone()).parse_module();
+        assert_eq!(module.imports.len(), 2);
+        assert_eq!(module.exports.len(), 0);
+        assert_eq!(module.raw_source, source);
+    }
+
+    #[test]
+    fn does_not_parse_default_export() {
+        let source = String::from("
+class C {}
+export default C;
+");
+        let module = JavascriptLexer::new(source.clone()).parse_module();
+        assert_eq!(module.imports.len(), 0);
+        assert_eq!(module.exports.len(), 0);
+        assert_eq!(module.raw_source, source);
+    }
+
+    #[test]
+    fn does_not_parse_named_export() {
+        let source = String::from("
+const e = 'e';
+
+export { e };
+");
+        let module = JavascriptLexer::new(source.clone()).parse_module();
+        assert_eq!(module.imports.len(), 0);
+        assert_eq!(module.exports.len(), 0);
+        assert_eq!(module.raw_source, source);
+    }
+
+    #[test]
+    fn parses_named_export() {
+        let source = String::from("
+export { b } from './b.js';
+");
+        let module = JavascriptLexer::new(source.clone()).parse_module();
+        assert_eq!(module.imports.len(), 0);
+        assert_eq!(module.exports.len(), 1);
+        assert_eq!(module.raw_source, source);
+    }
+
+    #[test]
+    fn parses_default_export() {
+        let source = String::from("
+export { b as default } from './b.js';
+");
+        let module = JavascriptLexer::new(source.clone()).parse_module();
+        assert_eq!(module.imports.len(), 0);
+        assert_eq!(module.exports.len(), 1);
+        assert_eq!(module.raw_source, source);
+    }
+
+    #[test]
+    fn parses_splat_export() {
+        let source = String::from("
+export * from './b.js';
+");
+        let module = JavascriptLexer::new(source.clone()).parse_module();
+        assert_eq!(module.imports.len(), 0);
+        assert_eq!(module.exports.len(), 1);
+        assert_eq!(module.raw_source, source);
+    }
+
+    #[test]
+    fn import_export_test() {
+        let source = String::from("
+import { AImport } from './a.js';
+import cDefault from './c.js';
+export * from './d.js';
+export { b as default } from './b.js';
+");
+        let module = JavascriptLexer::new(source.clone()).parse_module();
+        assert_eq!(module.imports.len(), 2);
+        assert_eq!(module.imports[0].specifier, "./a.js");
+        assert_eq!(module.imports[0].named_imports.len(), 1);
+        assert_eq!(module.imports[0].named_imports, vec![NamedImport {
+            variable_name: String::from("AImport"),
+            binding_name: String::from("AImport")
+        }]);
+        assert_eq!(module.imports[0].default_import, None);
+        assert_eq!(module.imports[1].specifier, "./c.js");
+        assert_eq!(module.imports[1].named_imports.len(), 0);
+        assert_eq!(module.imports[1].default_import, Some(DefaultImport {
+            variable_name: String::from("cDefault"),
+            binding_name: String::from("cDefault")
+        }));
+        assert_eq!(module.exports.len(), 2);
+        assert_eq!(module.exports[0].specifier, "./d.js");
+        assert_eq!(module.exports[1].specifier, "./b.js");
+        assert_eq!(module.raw_source, source);
+    }
 }
