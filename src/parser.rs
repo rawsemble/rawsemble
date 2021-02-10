@@ -4,7 +4,7 @@ use crate::lexer::{Token, TokenKind};
 pub struct JavascriptModule {
     pub imports: Vec<JavascriptImport>,
     pub exports: Vec<JavascriptExport>,
-    pub raw_source: String
+    pub raw_source: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -61,20 +61,20 @@ struct DefaultImport {
 }
 
 #[derive(Debug, PartialEq)]
-struct NamedImport<> {
+struct NamedImport {
     variable_name: String,
     binding_name: String,
 }
 
 #[derive(Debug, PartialEq)]
 enum NextToken {
-  Specifier,
-  DefaultImport,
-  DefaultExport,
-  NamedImport,
-  NamedExport,
-  StatementEnd,
-  Continue,
+    Specifier,
+    DefaultImport,
+    DefaultExport,
+    NamedImport,
+    NamedExport,
+    StatementEnd,
+    Continue,
 }
 
 #[derive(Debug)]
@@ -89,7 +89,7 @@ struct DefaultExport {
 }
 
 #[derive(Debug, PartialEq)]
-struct NamedExport<> {
+struct NamedExport {
     variable_name: String,
     binding_name: String,
 }
@@ -99,7 +99,7 @@ pub(crate) struct Parser<'l, 'a> {
     pending_import: Option<PendingImport>,
     pending_export: Option<PendingExport>,
     next_token: NextToken,
-    cursor: usize
+    cursor: usize,
 }
 
 impl<'l, 'a> Parser<'l, 'a> {
@@ -117,7 +117,7 @@ impl<'l, 'a> Parser<'l, 'a> {
         let mut js_module = JavascriptModule {
             imports: Vec::new(),
             exports: Vec::new(),
-            raw_source
+            raw_source,
         };
 
         for Token { kind, text } in self.tokens {
@@ -127,18 +127,18 @@ impl<'l, 'a> Parser<'l, 'a> {
                         import: JavascriptImport::new(),
                     });
                     self.next_token = NextToken::DefaultImport;
-                },
+                }
                 TokenKind::Export => {
                     self.pending_export = Some(PendingExport {
                         export: JavascriptExport::new(),
                     });
                     self.next_token = NextToken::DefaultExport;
-                },
+                }
                 TokenKind::From => {
                     if self.pending_import_or_export() {
                         self.next_token = NextToken::Specifier;
                     }
-                },
+                }
                 TokenKind::Ident => {
                     if self.pending_import.is_some() {
                         let mut pending_import = self.pending_import.as_mut().unwrap();
@@ -147,15 +147,15 @@ impl<'l, 'a> Parser<'l, 'a> {
                             NextToken::NamedImport => {
                                 pending_import.import.named_imports.push(NamedImport {
                                     variable_name: text.to_string(),
-                                    binding_name: text.to_string()
+                                    binding_name: text.to_string(),
                                 });
-                            },
+                            }
                             NextToken::DefaultImport => {
                                 pending_import.import.default_import = Some(DefaultImport {
                                     variable_name: text.to_string(),
-                                    binding_name: text.to_string()
+                                    binding_name: text.to_string(),
                                 });
-                            },
+                            }
                             _ => {}
                         }
                     } else if self.pending_export.is_some() {
@@ -165,61 +165,65 @@ impl<'l, 'a> Parser<'l, 'a> {
                             NextToken::NamedExport => {
                                 pending_export.export.named_exports.push(NamedExport {
                                     variable_name: text.to_string(),
-                                    binding_name: text.to_string()
+                                    binding_name: text.to_string(),
                                 });
-                            },
+                            }
                             NextToken::DefaultExport => {
                                 pending_export.export.default_export = Some(DefaultExport {
                                     variable_name: text.to_string(),
-                                    binding_name: text.to_string()
+                                    binding_name: text.to_string(),
                                 });
-                            },
+                            }
                             _ => {}
                         }
                     }
-                },
+                }
                 TokenKind::LBrace | TokenKind::Comma => {
                     if self.pending_import.is_some() {
                         self.next_token = NextToken::NamedImport;
                     } else if self.pending_export.is_some() {
                         self.next_token = NextToken::NamedExport;
                     }
-                },
+                }
                 TokenKind::RBrace => {
                     if self.pending_import_or_export() {
                         self.next_token = NextToken::Specifier;
                     }
-                },
-                TokenKind::Default => {},
-                TokenKind::As => {},
-                TokenKind::Star => {},
-                TokenKind::Error => {},
+                }
+                TokenKind::Default => {}
+                TokenKind::As => {}
+                TokenKind::Star => {}
+                TokenKind::Error => {}
                 TokenKind::Specifier => {
                     if self.pending_import.is_some() {
                         let mut pending_import = self.pending_import.as_mut().unwrap();
-                        pending_import.import.specifier = text[1..text.len()-1].to_string();
+                        pending_import.import.specifier = text[1..text.len() - 1].to_string();
                         pending_import.import.specifier_start = self.cursor;
                         pending_import.import.specifier_end = self.cursor + text.len();
                         self.next_token = NextToken::StatementEnd;
                     } else if self.pending_export.is_some() {
                         let mut pending_export = self.pending_export.as_mut().unwrap();
-                        pending_export.export.specifier = text[1..text.len()-1].to_string();
+                        pending_export.export.specifier = text[1..text.len() - 1].to_string();
                         pending_export.export.specifier_start = self.cursor;
                         pending_export.export.specifier_end = self.cursor + text.len();
                         self.next_token = NextToken::StatementEnd;
                     }
-                },
+                }
                 TokenKind::Semicolon | TokenKind::Whitespace => {
                     if self.next_token == NextToken::StatementEnd {
                         if self.pending_import.is_some() {
-                            js_module.imports.push(self.pending_import.take().unwrap().import);
+                            js_module
+                                .imports
+                                .push(self.pending_import.take().unwrap().import);
                         } else if self.pending_export.is_some() {
-                            js_module.exports.push(self.pending_export.take().unwrap().export);
+                            js_module
+                                .exports
+                                .push(self.pending_export.take().unwrap().export);
                         }
                         // we are done with this import or export.  Search for more
                         self.next_token = NextToken::Continue;
                     }
-                },
+                }
             }
 
             self.cursor += text.len();
@@ -248,8 +252,12 @@ import A from './a.js';
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 1);
         assert_eq!(module.exports.len(), 0);
-        assert_eq!(module.imports[0].default_import, Some(
-            DefaultImport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.imports[0].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.imports[0].named_imports, []);
         assert_eq!(module.imports[0].specifier, "./a.js");
@@ -268,8 +276,12 @@ import A from \"./a.js\";
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 1);
         assert_eq!(module.exports.len(), 0);
-        assert_eq!(module.imports[0].default_import, Some(
-            DefaultImport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.imports[0].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.imports[0].named_imports, []);
         assert_eq!(module.imports[0].specifier, "./a.js");
@@ -277,7 +289,6 @@ import A from \"./a.js\";
         assert_eq!(module.imports[0].specifier_end, 23);
         assert_eq!(module.raw_source, source.to_string());
     }
-
 
     #[test]
     fn parses_without_ending_semicolon() {
@@ -287,8 +298,12 @@ import A from './a.js'
         let tokens: Vec<_> = JavascriptLexer::new(&source).collect();
         let parser = Parser::new(&tokens);
         let module = parser.parse_module(source.to_string());
-        assert_eq!(module.imports[0].default_import, Some(
-            DefaultImport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.imports[0].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.imports[0].named_imports, []);
         assert_eq!(module.imports[0].specifier, "./a.js");
@@ -306,20 +321,42 @@ import C, { d, e } from './c.js';
         let parser = Parser::new(&tokens);
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 2);
-        assert_eq!(module.imports[0].default_import, Some(
-            DefaultImport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.imports[0].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.imports[0].named_imports.len(), 2);
-        assert_eq!(module.imports[0].named_imports, [
-            NamedImport { variable_name: String::from("a"), binding_name: String::from("a") },
-            NamedImport { variable_name: String::from("b"), binding_name: String::from("b") }
-        ]);
+        assert_eq!(
+            module.imports[0].named_imports,
+            [
+                NamedImport {
+                    variable_name: String::from("a"),
+                    binding_name: String::from("a")
+                },
+                NamedImport {
+                    variable_name: String::from("b"),
+                    binding_name: String::from("b")
+                }
+            ]
+        );
         assert_eq!(module.imports[0].specifier, "./a.js");
         assert_eq!(module.imports[1].named_imports.len(), 2);
-        assert_eq!(module.imports[1].named_imports, [
-            NamedImport { variable_name: String::from("d"), binding_name: String::from("d") },
-            NamedImport { variable_name: String::from("e"), binding_name: String::from("e") }
-        ]);
+        assert_eq!(
+            module.imports[1].named_imports,
+            [
+                NamedImport {
+                    variable_name: String::from("d"),
+                    binding_name: String::from("d")
+                },
+                NamedImport {
+                    variable_name: String::from("e"),
+                    binding_name: String::from("e")
+                }
+            ]
+        );
     }
 
     #[test]
@@ -332,7 +369,13 @@ import { a } from './a.js';
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 1);
         assert_eq!(module.imports[0].default_import, None);
-        assert_eq!(module.imports[0].named_imports, [NamedImport { variable_name: String::from("a"), binding_name: String::from("a") }]);
+        assert_eq!(
+            module.imports[0].named_imports,
+            [NamedImport {
+                variable_name: String::from("a"),
+                binding_name: String::from("a")
+            }]
+        );
         assert_eq!(module.imports[0].specifier, "./a.js");
     }
 
@@ -346,10 +389,19 @@ import { a, b } from './a.js';
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 1);
         assert_eq!(module.imports[0].default_import, None);
-        assert_eq!(module.imports[0].named_imports, [
-            NamedImport { variable_name: String::from("a"), binding_name: String::from("a") },
-            NamedImport { variable_name: String::from("b"), binding_name: String::from("b") }
-        ]);
+        assert_eq!(
+            module.imports[0].named_imports,
+            [
+                NamedImport {
+                    variable_name: String::from("a"),
+                    binding_name: String::from("a")
+                },
+                NamedImport {
+                    variable_name: String::from("b"),
+                    binding_name: String::from("b")
+                }
+            ]
+        );
         assert_eq!(module.imports[0].specifier, "./a.js");
     }
 
@@ -362,13 +414,26 @@ import A, { a, b } from './a.js';
         let parser = Parser::new(&tokens);
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 1);
-        assert_eq!(module.imports[0].default_import, Some(
-            DefaultImport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.imports[0].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
-        assert_eq!(module.imports[0].named_imports, [
-            NamedImport { variable_name: String::from("a"), binding_name: String::from("a") },
-            NamedImport { variable_name: String::from("b"), binding_name: String::from("b") }
-        ]);
+        assert_eq!(
+            module.imports[0].named_imports,
+            [
+                NamedImport {
+                    variable_name: String::from("a"),
+                    binding_name: String::from("a")
+                },
+                NamedImport {
+                    variable_name: String::from("b"),
+                    binding_name: String::from("b")
+                }
+            ]
+        );
         assert_eq!(module.imports[0].specifier, "./a.js");
     }
 
@@ -382,8 +447,12 @@ export A from './a.js';
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 0);
         assert_eq!(module.exports.len(), 1);
-        assert_eq!(module.exports[0].default_export, Some(
-            DefaultExport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.exports[0].default_export,
+            Some(DefaultExport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.exports[0].named_exports, []);
         assert_eq!(module.exports[0].specifier, "./a.js");
@@ -403,10 +472,19 @@ export { d, E } from './d.js';
         assert_eq!(module.imports.len(), 0);
         assert_eq!(module.exports.len(), 1);
         assert_eq!(module.exports[0].default_export, None);
-        assert_eq!(module.exports[0].named_exports, [
-            NamedExport { variable_name: String::from("d"), binding_name: String::from("d") },
-            NamedExport { variable_name: String::from("E"), binding_name: String::from("E") }
-        ]);
+        assert_eq!(
+            module.exports[0].named_exports,
+            [
+                NamedExport {
+                    variable_name: String::from("d"),
+                    binding_name: String::from("d")
+                },
+                NamedExport {
+                    variable_name: String::from("E"),
+                    binding_name: String::from("E")
+                }
+            ]
+        );
         assert_eq!(module.exports[0].specifier, "./d.js");
         assert_eq!(module.exports[0].specifier_start, 22);
         assert_eq!(module.exports[0].specifier_end, 30);
@@ -424,9 +502,13 @@ export { b as default } from './b.js';
         assert_eq!(module.imports.len(), 0);
         assert_eq!(module.exports.len(), 1);
         assert_eq!(module.exports[0].default_export, None);
-        assert_eq!(module.exports[0].named_exports, [
-            NamedExport { variable_name: String::from("b"), binding_name: String::from("b") },
-        ]);
+        assert_eq!(
+            module.exports[0].named_exports,
+            [NamedExport {
+                variable_name: String::from("b"),
+                binding_name: String::from("b")
+            },]
+        );
         assert_eq!(module.exports[0].specifier, "./b.js");
         assert_eq!(module.exports[0].specifier_start, 30);
         assert_eq!(module.exports[0].specifier_end, 38);
@@ -444,9 +526,13 @@ export { default as b } from './b.js';
         assert_eq!(module.imports.len(), 0);
         assert_eq!(module.exports.len(), 1);
         assert_eq!(module.exports[0].default_export, None);
-        assert_eq!(module.exports[0].named_exports, [
-            NamedExport { variable_name: String::from("b"), binding_name: String::from("b") },
-        ]);
+        assert_eq!(
+            module.exports[0].named_exports,
+            [NamedExport {
+                variable_name: String::from("b"),
+                binding_name: String::from("b")
+            },]
+        );
         assert_eq!(module.exports[0].specifier, "./b.js");
         assert_eq!(module.exports[0].specifier_start, 30);
         assert_eq!(module.exports[0].specifier_end, 38);
@@ -483,15 +569,28 @@ export A from './a.js';
         assert_eq!(module.imports.len(), 0);
         assert_eq!(module.exports.len(), 2);
         assert_eq!(module.exports[0].default_export, None);
-        assert_eq!(module.exports[0].named_exports, [
-            NamedExport { variable_name: String::from("d"), binding_name: String::from("d") },
-            NamedExport { variable_name: String::from("E"), binding_name: String::from("E") }
-        ]);
+        assert_eq!(
+            module.exports[0].named_exports,
+            [
+                NamedExport {
+                    variable_name: String::from("d"),
+                    binding_name: String::from("d")
+                },
+                NamedExport {
+                    variable_name: String::from("E"),
+                    binding_name: String::from("E")
+                }
+            ]
+        );
         assert_eq!(module.exports[0].specifier, "./d.js");
         assert_eq!(module.exports[0].specifier_start, 22);
         assert_eq!(module.exports[0].specifier_end, 30);
-        assert_eq!(module.exports[1].default_export, Some(
-            DefaultExport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.exports[1].default_export,
+            Some(DefaultExport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.exports[1].named_exports, []);
         assert_eq!(module.exports[1].specifier, "./a.js");
@@ -512,16 +611,24 @@ export { A as default } from './a-default.js';
         assert_eq!(module.imports.len(), 0);
         assert_eq!(module.exports.len(), 2);
         assert_eq!(module.exports[0].default_export, None);
-        assert_eq!(module.exports[0].named_exports, [
-            NamedExport { variable_name: String::from("DModule"), binding_name: String::from("DModule") },
-        ]);
+        assert_eq!(
+            module.exports[0].named_exports,
+            [NamedExport {
+                variable_name: String::from("DModule"),
+                binding_name: String::from("DModule")
+            },]
+        );
         assert_eq!(module.exports[0].specifier, "./d.js");
         assert_eq!(module.exports[0].specifier_start, 36);
         assert_eq!(module.exports[0].specifier_end, 44);
         assert_eq!(module.exports[1].default_export, None);
-        assert_eq!(module.exports[1].named_exports, [
-            NamedExport { variable_name: String::from("A"), binding_name: String::from("A") },
-        ]);
+        assert_eq!(
+            module.exports[1].named_exports,
+            [NamedExport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            },]
+        );
         assert_eq!(module.exports[1].specifier, "./a-default.js");
         assert_eq!(module.exports[1].specifier_start, 75);
         assert_eq!(module.exports[1].specifier_end, 91);
@@ -568,12 +675,20 @@ export E from './e.js';
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 1);
         assert_eq!(module.exports.len(), 1);
-        assert_eq!(module.imports[0].default_import, Some(
-            DefaultImport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.imports[0].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.imports[0].named_imports, []);
-        assert_eq!(module.exports[0].default_export, Some(
-            DefaultExport { variable_name: String::from("E"), binding_name: String::from("E") })
+        assert_eq!(
+            module.exports[0].default_export,
+            Some(DefaultExport {
+                variable_name: String::from("E"),
+                binding_name: String::from("E")
+            })
         );
         assert_eq!(module.exports[0].named_exports, []);
         assert_eq!(module.exports[0].specifier, "./e.js");
@@ -596,16 +711,24 @@ export E from './e.js';
 
         assert_eq!(module.imports.len(), 1);
         assert_eq!(module.exports.len(), 1);
-        assert_eq!(module.imports[0].default_import, Some(
-            DefaultImport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.imports[0].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.imports[0].named_imports, []);
         assert_eq!(module.imports[0].specifier, "./a.js");
         assert_eq!(module.imports[0].specifier_start, 15);
         assert_eq!(module.imports[0].specifier_end, 23);
 
-        assert_eq!(module.exports[0].default_export, Some(
-            DefaultExport { variable_name: String::from("E"), binding_name: String::from("E") })
+        assert_eq!(
+            module.exports[0].default_export,
+            Some(DefaultExport {
+                variable_name: String::from("E"),
+                binding_name: String::from("E")
+            })
         );
         assert_eq!(module.exports[0].named_exports, []);
         assert_eq!(module.exports[0].specifier, "./e.js");
@@ -627,8 +750,12 @@ import C from './c.js'; /** test-comment */
         let module = parser.parse_module(source.to_string());
         assert_eq!(module.imports.len(), 3);
         assert_eq!(module.exports.len(), 0);
-        assert_eq!(module.imports[0].default_import, Some(
-            DefaultImport { variable_name: String::from("A"), binding_name: String::from("A") })
+        assert_eq!(
+            module.imports[0].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("A"),
+                binding_name: String::from("A")
+            })
         );
         assert_eq!(module.imports[0].named_imports, []);
         assert_eq!(module.imports[0].specifier, "./a.js");
@@ -636,8 +763,12 @@ import C from './c.js'; /** test-comment */
         assert_eq!(module.imports[0].specifier_end, 23);
         assert_eq!(module.raw_source, source.to_string());
 
-        assert_eq!(module.imports[1].default_import, Some(
-            DefaultImport { variable_name: String::from("B"), binding_name: String::from("B") })
+        assert_eq!(
+            module.imports[1].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("B"),
+                binding_name: String::from("B")
+            })
         );
         assert_eq!(module.imports[1].named_imports, []);
         assert_eq!(module.imports[1].specifier, "./b.js");
@@ -645,8 +776,12 @@ import C from './c.js'; /** test-comment */
         assert_eq!(module.imports[1].specifier_end, 82);
         assert_eq!(module.raw_source, source.to_string());
 
-        assert_eq!(module.imports[2].default_import, Some(
-            DefaultImport { variable_name: String::from("C"), binding_name: String::from("C") })
+        assert_eq!(
+            module.imports[2].default_import,
+            Some(DefaultImport {
+                variable_name: String::from("C"),
+                binding_name: String::from("C")
+            })
         );
         assert_eq!(module.imports[2].named_imports, []);
         assert_eq!(module.imports[2].specifier, "./c.js");
@@ -654,5 +789,4 @@ import C from './c.js'; /** test-comment */
         assert_eq!(module.imports[2].specifier_end, 106);
         assert_eq!(module.raw_source, source.to_string());
     }
-
 }

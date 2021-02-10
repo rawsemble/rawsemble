@@ -1,9 +1,9 @@
 use std::fs;
+pub mod bundler;
 pub mod lexer;
 pub mod parser;
-pub mod bundler;
-use std::collections::HashMap;
 use relative_path::{RelativePath, RelativePathBuf};
+use std::collections::HashMap;
 use std::env::current_dir;
 
 fn main() {
@@ -17,8 +17,12 @@ fn main() {
     println!("bundle.js written");
 }
 
-fn traverse_file(file_path: String, mut module_map: HashMap<String, parser::JavascriptModule>) -> HashMap<String, parser::JavascriptModule> {
-    let source = fs::read_to_string(file_path.clone()).expect(format!("Unable to read {}", file_path.clone()).as_str());
+fn traverse_file(
+    file_path: String,
+    mut module_map: HashMap<String, parser::JavascriptModule>,
+) -> HashMap<String, parser::JavascriptModule> {
+    let source = fs::read_to_string(file_path.clone())
+        .expect(format!("Unable to read {}", file_path.clone()).as_str());
 
     let tokens: Vec<_> = lexer::JavascriptLexer::new(&source).collect();
     let parser = parser::Parser::new(&tokens);
@@ -39,7 +43,11 @@ fn traverse_file(file_path: String, mut module_map: HashMap<String, parser::Java
         module_map = traverse_file(mod_path.to_string(), module_map);
     }
 
-    let full_path = RelativePath::new(file_path.as_str()).to_path(current_dir().unwrap().as_path()).to_str().unwrap().to_string();
+    let full_path = RelativePath::new(file_path.as_str())
+        .to_path(current_dir().unwrap().as_path())
+        .to_str()
+        .unwrap()
+        .to_string();
 
     module_map.insert(full_path, module);
 

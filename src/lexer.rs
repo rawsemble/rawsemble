@@ -13,7 +13,7 @@ pub(crate) struct JavascriptLexer<'a> {
 impl<'a> JavascriptLexer<'a> {
     pub(crate) fn new(source: &'a str) -> Self {
         Self {
-            inner: TokenKind::lexer(source)
+            inner: TokenKind::lexer(source),
         }
     }
 }

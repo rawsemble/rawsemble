@@ -1,16 +1,21 @@
 use super::parser;
-use std::collections::HashMap;
-use std::rc::Rc;
 use relative_path::{RelativePath, RelativePathBuf};
+use std::collections::HashMap;
 use std::env::current_dir;
+use std::rc::Rc;
 
 pub struct JavascriptBundle {
     pub content: String,
 }
 
-pub fn bundle(entry_module: String, module_map: HashMap<String, parser::JavascriptModule>) -> JavascriptBundle {
+pub fn bundle(
+    entry_module: String,
+    module_map: HashMap<String, parser::JavascriptModule>,
+) -> JavascriptBundle {
     let mut content = String::new();
-    content.push_str("import { insertModule, createModuleUrl, resolveImportSpecifier } from \"/bloom.js\";\n");
+    content.push_str(
+        "import { insertModule, createModuleUrl, resolveImportSpecifier } from \"/bloom.js\";\n",
+    );
 
     traverse_module(&entry_module, &mut content, Rc::new(module_map));
 
@@ -20,14 +25,22 @@ pub fn bundle(entry_module: String, module_map: HashMap<String, parser::Javascri
 
     println!("{}", content);
 
-    JavascriptBundle {
-        content
-    }
+    JavascriptBundle { content }
 }
 
-fn traverse_module(file_path: &String, content: &mut String, module_map: Rc<HashMap<String, parser::JavascriptModule>>) {
+fn traverse_module(
+    file_path: &String,
+    content: &mut String,
+    module_map: Rc<HashMap<String, parser::JavascriptModule>>,
+) {
     let full_path = RelativePath::new(file_path).to_path(current_dir().unwrap().as_path());
-    let module = module_map.get(full_path.to_str().unwrap()).expect(format!("File not found in module_map {}", full_path.to_str().unwrap()).as_str());
+    let module = module_map.get(full_path.to_str().unwrap()).expect(
+        format!(
+            "File not found in module_map {}",
+            full_path.to_str().unwrap()
+        )
+        .as_str(),
+    );
 
     let mut parent_path_buf = RelativePathBuf::from(file_path.as_str());
     parent_path_buf.pop();
@@ -48,7 +61,12 @@ fn traverse_module(file_path: &String, content: &mut String, module_map: Rc<Hash
 
     let mut last_index: usize = 0;
     for import in module.imports.iter() {
-        content.push_str(module.raw_source.get(last_index..=import.specifier_start).unwrap());
+        content.push_str(
+            module
+                .raw_source
+                .get(last_index..=import.specifier_start)
+                .unwrap(),
+        );
         content.push_str("${resolveImportSpecifier(\"");
         let mod_path = parent_path_buf.join_normalized(RelativePath::new(&import.specifier));
         content.push_str(&mod_path.to_string().as_str());
@@ -58,7 +76,12 @@ fn traverse_module(file_path: &String, content: &mut String, module_map: Rc<Hash
 
     for export in module.exports.iter() {
         let mod_path = parent_path_buf.join_normalized(RelativePath::new(&export.specifier));
-        content.push_str(module.raw_source.get(last_index..=export.specifier_start).unwrap());
+        content.push_str(
+            module
+                .raw_source
+                .get(last_index..=export.specifier_start)
+                .unwrap(),
+        );
         content.push_str("${resolveImportSpecifier(\"");
         content.push_str(&mod_path.to_string().as_str());
         content.push_str("\")}");
@@ -66,7 +89,12 @@ fn traverse_module(file_path: &String, content: &mut String, module_map: Rc<Hash
     }
 
     if last_index < module.raw_source.len() {
-        content.push_str(module.raw_source.get(last_index..module.raw_source.len()).unwrap());
+        content.push_str(
+            module
+                .raw_source
+                .get(last_index..module.raw_source.len())
+                .unwrap(),
+        );
     }
     content.push_str("`));\n");
 }
