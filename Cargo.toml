@@ -7,6 +7,5 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-strum_macros = "0.20.1"
+logos = "0.11.4"
 relative-path = "1.3.2"

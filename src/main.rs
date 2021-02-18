@@ -1,12 +1,13 @@
 use std::fs;
-pub mod lexer;
 pub mod bundler;
-use std::collections::HashMap;
+pub mod lexer;
+pub mod parser;
 use relative_path::{RelativePath, RelativePathBuf};
+use std::collections::HashMap;
 use std::env::current_dir;
 
 fn main() {
-    let mut module_map: HashMap<String, lexer::JavascriptModule> = HashMap::new();
+    let mut module_map: HashMap<String, parser::JavascriptModule> = HashMap::new();
     let entry_file = String::from("test/fixtures/src/main.js");
     module_map = traverse_file(entry_file.clone(), module_map);
 
@@ -16,9 +17,16 @@ fn main() {
     println!("bundle.js written");
 }
 
-fn traverse_file(file_path: String, mut module_map: HashMap<String, lexer::JavascriptModule>) -> HashMap<String, lexer::JavascriptModule> {
-    let source = fs::read_to_string(file_path.clone()).expect(format!("Unable to read {}", file_path.clone()).as_str());
-    let module: lexer::JavascriptModule = lexer::JavascriptLexer::new(source).parse_module();
+fn traverse_file(
+    file_path: String,
+    mut module_map: HashMap<String, parser::JavascriptModule>,
+) -> HashMap<String, parser::JavascriptModule> {
+    let source = fs::read_to_string(file_path.clone())
+        .expect(format!("Unable to read {}", file_path.clone()).as_str());
+
+    let tokens: Vec<_> = lexer::JavascriptLexer::new(&source).collect();
+    let parser = parser::Parser::new(&tokens);
+    let module = parser.parse_module(source.clone());
 
     for import in module.imports.iter() {
         let mut parent_path_buf = RelativePathBuf::from(file_path.as_str());
@@ -35,7 +43,11 @@ fn traverse_file(file_path: String, mut module_map: HashMap<String, lexer::Javas
         module_map = traverse_file(mod_path.to_string(), module_map);
     }
 
-    let full_path = RelativePath::new(file_path.as_str()).to_path(current_dir().unwrap().as_path()).to_str().unwrap().to_string();
+    let full_path = RelativePath::new(file_path.as_str())
+        .to_path(current_dir().unwrap().as_path())
+        .to_str()
+        .unwrap()
+        .to_string();
 
     module_map.insert(full_path, module);
 

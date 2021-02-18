@@ -26,9 +26,12 @@ insertModule("test/fixtures/src/c-default.js",createModuleUrl(`const c = 'defaul
 
 export default c;
 `));
-insertModule("test/fixtures/src/main.js",createModuleUrl(`import A, { a, b, DModule, e } from '${resolveImportSpecifier("test/fixtures/src/a.js")}';
+insertModule("test/fixtures/src/main.js",createModuleUrl(`import A, { a, b, DModule, e } from '${resolveImportSpecifier("test/fixtures/src/a.js")}'; // test-comment
 import c from '${resolveImportSpecifier("test/fixtures/src/c-default.js")}';
 
+/**
+ * Make sure this shows up in the console
+ */
 console.log('hi there', A, a, b, c, DModule, e);
 `));
 import(resolveImportSpecifier("test/fixtures/src/main.js"));
